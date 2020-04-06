@@ -1,39 +1,37 @@
 dict = {}
-saved_strings = {}
-saved_sets = {}
+saved_dict = {}
 timeout = {}
 
-function answer(content) {
-    document.getElementById("result").innerHTML = content + "<br />" +
-    document.getElementById("result").innerHTML;
+function getCommand() {
+    full_command = document.getElementById("command").value;
+    answer(">" + full_command);
+
+    full_command = full_command.toLowerCase();
+    parser = full_command.split(" ");
+    command_name = parser[0];
+
+    if (command_name in commandTable) {
+        commandTable[command_name](parser);
+    } else {
+        answer("Command not found!");
+    }
 }
 
 var commandTable = {
-    /*
-    String:
-    - SET key value: set a string value, 
-                     always overwriting what is saved under key
-    - GET key: get a string value at key
-    */
+    // SET key value: set a string value, 
+    //     always overwriting what is saved under key
     "set": () => {
         dict[parser[1]] = parser[2];
         answer("Added string!");
     },
+    // GET key: get a string value at key
     "get": () => {
         var key = parser[1];
         if (check_key(key)) return;
         if (check_type(key, "string")) return;
         answer(dict[key]);
     },
-    /*
-    Set: Set is a unordered collection of unique string values 
-        (duplicates not allowed)
-    - SADD key value1 [value2...]: add values to set stored at key
-    - SREM key value1 [value2...]: remove values from set
-    - SMEMBERS key: return array of all members of set
-    - SINTER [key1] [key2] [key3] ...: *(bonus)* set intersection among all set 
-        stored in specified keys. Return array of members of the result set
-    */
+    // SADD key value1 [value2...]: add values to set stored at key
     "sadd": () => {
         var key = parser[1];
         if ((key in dict) && (check_type(key, "set"))) return;
@@ -49,6 +47,7 @@ var commandTable = {
         }
         answer("Added values to set !");
     },
+    // SREM key value1 [value2...]: remove values from set
     "srem": () => {
         var key = parser[1];
         if (check_key(key)) return;
@@ -61,6 +60,7 @@ var commandTable = {
         }
         answer("Removed values from set!");
     },
+    // SMEMBERS key: return array of all members of set
     "smembers": () => {
         var key = parser[1];
         if (check_key(key)) return;
@@ -72,6 +72,8 @@ var commandTable = {
         })
         answer(str);
     },
+    // SINTER [key1] [key2] [key3] ...: set intersection among all set 
+    //     stored in specified keys. Return array of members of the result set
     "sinter": () => {
         var size = parser.length;
         var intersection = {}
@@ -98,15 +100,7 @@ var commandTable = {
         );
         answer(str);
     },
-    /*
-    Data Expiration:
-    - KEYS: List all available keys
-    - DEL key: delete a key
-    - EXPIRE key seconds: set a timeout on a key, seconds is a positive integer 
-        (by default a key has no expiration). Return the number of seconds if the 
-        timeout is set
-    - TTL key: query the timeout of a key
-    */
+    // KEYS: List all available keys
     "keys": () => {
         var str = "";
         for (var key in dict) {
@@ -114,6 +108,7 @@ var commandTable = {
         }
         answer(str);
     },
+    // DEL key: delete a key
     "del": () => {
         var key = parser[1];
         if (check_key(key)) return;
@@ -121,6 +116,9 @@ var commandTable = {
         delete dict[key];
         answer("Key deleted!")
     },
+    // EXPIRE key seconds: set a timeout on a key, seconds is a positive integer 
+    //     (by default a key has no expiration). Return the number of seconds 
+    //     if the timeout is set
     "expire": () => {
         var key = parser[1];
         if (check_key(key)) return;
@@ -133,25 +131,28 @@ var commandTable = {
         timeout[key] = (new Date).getTime() + time;
         answer("This key will be expired as scheduled!")
     },
+    // TTL key: query the timeout of a key
     "ttl": () => {
         var key = parser[1];
         if (check_key(key)) return;
         answer(`This key will be expired in
             ${(timeout[key] - (new Date).getTime())/1000} second(s)!`)
     },
-    /*
-    Snapshot:
-    - SAVE: save current state in a snapshot
-    - RESTORE: restore from the last snapshot,
-    */
+    // SAVE: save current state in a snapshot
     "save": () => {
         saved_dict = { ...dict};
         answer("Current state saved!")
     },
+    // RESTORE: restore from the last snapshot
     "restore": () => {
         dict = saved_dict;
         answer("Last snapshot restored!")
     }
+}
+
+function answer(content) {
+    document.getElementById("result").innerHTML = content + "<br />" +
+    document.getElementById("result").innerHTML;
 }
 
 function check_key(key) {
@@ -174,20 +175,3 @@ function check_type(key, type) {
     }
 }
 
-function getCommand() {
-    command = document.getElementById("command").value;
-    process(command);
-}
-
-function process(full_command) {
-    answer(">" + full_command);
-    full_command = full_command.toLowerCase();
-    parser = full_command.split(" ");
-    command_name = parser[0];
-    console.log(command_name);
-    if (command_name in commandTable) {
-        commandTable[command_name](parser);
-    } else {
-        answer("Command not found!");
-    }
-}
